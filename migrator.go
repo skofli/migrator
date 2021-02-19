@@ -12,7 +12,7 @@ import (
 	"strconv"
 )
 
-func RemoveIndex(s []string, index int) []string {
+func removeIndex(s []string, index int) []string {
 	return append(s[:index], s[index+1:]...)
 }
 
@@ -21,7 +21,7 @@ func nonMakedFiles(files []string, makedList []string) []string {
 	for i := len(files) - 1; i >= 0; i-- {
 		for j := 0; j < len(makedList); j++ {
 			if files[i] == makedList[j] {
-				nmFiles = RemoveIndex(nmFiles, i)
+				nmFiles = removeIndex(nmFiles, i)
 			}
 		}
 	}

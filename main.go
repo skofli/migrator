@@ -49,13 +49,9 @@ func fileToList(files []string, ) []string {
 	return sqlList
 }
 
-func main() {
-
+func migrate(dbConnectInfo string, sqlFilePath string)  {
 	ctx := context.Background()
-	connStr := ""
-	fmt.Println("Write postgres connect info ")
-	fmt.Fscan(os.Stdin, &connStr)
-	dbpool, err := pgxpool.Connect(ctx, connStr)
+	dbpool, err := pgxpool.Connect(ctx, dbConnectInfo)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		os.Exit(1)
@@ -72,10 +68,6 @@ func main() {
 		makedList = append(makedList, makedFilesName)
 	}
 
-	fmt.Println(makedList)
-	sqlFilePath := ""
-	fmt.Println("Write path to .sql files  ")
-	fmt.Fscan(os.Stdin, &connStr)
 	files, err := filepath.Glob(sqlFilePath + "*.sql") // Getting list of all files in dir
 	if err != nil {
 		log.Fatal(err)

@@ -1,4 +1,5 @@
 # Default ignored files
+*.sql
 /shelf/
 /workspace.xml
 # Datasource local storage ignored files

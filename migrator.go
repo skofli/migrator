@@ -91,3 +91,5 @@ func Migrate(dbConnectInfo string, sqlFilePath string)  {
 	}
 	fmt.Println("Sql requests have been sent")
 }
+func main() {
+}

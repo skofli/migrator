@@ -49,7 +49,7 @@ func fileToList(files []string, ) []string {
 	return sqlList
 }
 
-func migrate(dbConnectInfo string, sqlFilePath string)  {
+func Migrate(dbConnectInfo string, sqlFilePath string)  {
 	ctx := context.Background()
 	dbpool, err := pgxpool.Connect(ctx, dbConnectInfo)
 	if err != nil {

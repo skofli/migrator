@@ -90,6 +90,8 @@ func Migrate(dbConnectInfo string, sqlFilePath string)  {
 			_, err = dbpool.Exec(ctx, sqlList.sqlList[i]) // Sql request
 			if err != nil{
 				_, err = dbpool.Exec(ctx, "rollback")
+				fmt.Println("rollbacked")
+				removeIndex(sqlList.filename,j)
 			}
 		}
 	}

@@ -12,9 +12,9 @@ import (
 	"strconv"
 )
 
-type sqlReq struct {
-	filename []string
-	sqlList []string
+type sqlReq []struct {
+	filename string
+	sqlList  []string
 }
 
 func removeIndex(s []string, index int) []string {
@@ -45,18 +45,19 @@ func fileToList(files []string, ) sqlReq {
 				log.Fatal(err)
 			}
 		}()
-		sqlList.filename = append(sqlList.filename, files[i])
+		sqlList = append(sqlList, struct {
+			filename string
+			sqlList  []string
+		}{filename: files[i]})
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
-			sqlList.sqlList = append(sqlList.sqlList, scanner.Text())
+			sqlList[i].sqlList = append(sqlList[i].sqlList, scanner.Text())
 		}
 	}
 	return sqlList
 }
 
-func Migrate(dbConnectInfo string, sqlFilePath string)  {
-
-
+func Migrate(dbConnectInfo string, sqlFilePath string) {
 
 	ctx := context.Background()
 	dbpool, err := pgxpool.Connect(ctx, dbConnectInfo)
@@ -85,19 +86,18 @@ func Migrate(dbConnectInfo string, sqlFilePath string)  {
 
 	nmFiles := nonMakedFiles(files, makedList)
 	sqlList := fileToList(nmFiles)
-	for j:=0;j<len(sqlList.filename);j++ {
-		for i := 0; i < len(sqlList.sqlList); i++ {
-			_, err = dbpool.Exec(ctx, sqlList.sqlList[i]) // Sql request
-			if err != nil{
-				_, err = dbpool.Exec(ctx, "rollback")
-				fmt.Println("rollbacked")
-				removeIndex(sqlList.filename,j)
+	for j := 0; j < len(sqlList); j++ {
+		tx, err := dbpool.Begin(ctx)
+		for i := 0; i < len(sqlList[j].sqlList); i++ {
+			_, err = tx.Exec(ctx, sqlList[j].sqlList[i]) // Sql request
+			if err != nil {
+				fmt.Println("ERROR: File {" + files[j] + "} has invalid syntax. Rollback.")
+				err = tx.Rollback(ctx)
+				os.Exit(1)
 			}
 		}
-	}
-
-	for i := 0; i < len(nmFiles); i++ {
-		_, err = dbpool.Exec(ctx, "insert into migrations(filename) values ('"+nmFiles[i]+"')")
+		_, err = dbpool.Exec(ctx, "insert into migrations(filename) values ('"+sqlList[j].filename+"');")
+		err = tx.Commit(ctx)
 	}
 
 	if err != nil {

@@ -91,7 +91,7 @@ func Migrate(dbConnectInfo string, sqlFilePath string) {
 		for i := 0; i < len(sqlList[j].sqlList); i++ {
 			_, err = tx.Exec(ctx, sqlList[j].sqlList[i]) // Sql request
 			if err != nil {
-				fmt.Println("ERROR: File {" + files[j] + "} has invalid syntax. Rollback.")
+				fmt.Println("ERROR: File {" + files[j] + "} has invalid syntax. Rollback. Files before it have been maked.")
 				err = tx.Rollback(ctx)
 				os.Exit(1)
 			}

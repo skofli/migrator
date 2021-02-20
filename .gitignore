@@ -1,12 +1,1 @@
-*.exe
-*.exe~
-*.dll
-*.so
-*.dylib
-*.sql
-
-
-*.test
-
-
-*.out
+.idea/

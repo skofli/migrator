@@ -1,9 +1,8 @@
-module db_test1
+module github.com/skofli/migrator
 
 go 1.15
 
 require (
-	github.com/google/subcommands v1.2.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.0.7 // indirect
 	github.com/jackc/pgx/v4 v4.10.1
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect

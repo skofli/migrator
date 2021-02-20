@@ -12,6 +12,11 @@ import (
 	"strconv"
 )
 
+type sqlReq struct {
+	filename []string
+	sqlList []string
+}
+
 func removeIndex(s []string, index int) []string {
 	return append(s[:index], s[index+1:]...)
 }
@@ -28,8 +33,8 @@ func nonMakedFiles(files []string, makedList []string) []string {
 	return nmFiles
 }
 
-func fileToList(files []string, ) []string {
-	var sqlList []string
+func fileToList(files []string, ) sqlReq {
+	var sqlList sqlReq
 	for i := 0; i < len(files); i++ {
 		file, err := os.Open(files[i]) // Read files
 		if err != nil {
@@ -40,16 +45,19 @@ func fileToList(files []string, ) []string {
 				log.Fatal(err)
 			}
 		}()
-
+		sqlList.filename = append(sqlList.filename, files[i])
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
-			sqlList = append(sqlList, scanner.Text())
+			sqlList.sqlList = append(sqlList.sqlList, scanner.Text())
 		}
 	}
 	return sqlList
 }
 
 func Migrate(dbConnectInfo string, sqlFilePath string)  {
+
+
+
 	ctx := context.Background()
 	dbpool, err := pgxpool.Connect(ctx, dbConnectInfo)
 	if err != nil {
@@ -77,8 +85,13 @@ func Migrate(dbConnectInfo string, sqlFilePath string)  {
 
 	nmFiles := nonMakedFiles(files, makedList)
 	sqlList := fileToList(nmFiles)
-	for i := 0; i < len(sqlList); i++ {
-		_, err = dbpool.Exec(ctx, sqlList[i]) // Sql request
+	for j:=0;j<len(sqlList.filename);j++ {
+		for i := 0; i < len(sqlList.sqlList); i++ {
+			_, err = dbpool.Exec(ctx, sqlList.sqlList[i]) // Sql request
+			if err != nil{
+				_, err = dbpool.Exec(ctx, "rollback")
+			}
+		}
 	}
 
 	for i := 0; i < len(nmFiles); i++ {

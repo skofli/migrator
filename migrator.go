@@ -57,13 +57,13 @@ func fileToList(files []string, ) sqlReq {
 	return sqlList
 }
 
-func Migrate(dbConnectInfo string, sqlFilePath string) {
+func Migrate(dbConnectInfo string, sqlFilePath string) error{
 
 	ctx := context.Background()
 	dbpool, err := pgxpool.Connect(ctx, dbConnectInfo)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
+		return err
 	}
 	defer dbpool.Close()
 
@@ -93,7 +93,7 @@ func Migrate(dbConnectInfo string, sqlFilePath string) {
 		if err != nil {
 			fmt.Println("ERROR: File {" + files[j] + "} has invalid syntax. Rollback. Files before it have been maked.")
 			err = tx.Rollback(ctx)
-			os.Exit(1)
+			return err
 		}
 		_, err = dbpool.Exec(ctx, "insert into migrations(filename) values ('"+sqlList[j].filename+"');")
 		err = tx.Commit(ctx)
@@ -101,11 +101,12 @@ func Migrate(dbConnectInfo string, sqlFilePath string) {
 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-		os.Exit(1)
+		return err
 	}
 	if len(sqlList) == 0 {
 		fmt.Println("There is no one outstanding file")
 	} else {
 		fmt.Println("Sql requests have been sent")
 	}
+	return err
 }

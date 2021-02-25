@@ -14,7 +14,7 @@ import (
 
 type sqlReq []struct {
 	filename string
-	sqlList  []string
+	sqlList  string
 }
 
 func removeIndex(s []string, index int) []string {
@@ -47,11 +47,11 @@ func fileToList(files []string, ) sqlReq {
 		}()
 		sqlList = append(sqlList, struct {
 			filename string
-			sqlList  []string
+			sqlList  string
 		}{filename: files[i]})
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
-			sqlList[i].sqlList = append(sqlList[i].sqlList, scanner.Text())
+			sqlList[i].sqlList += scanner.Text()
 		}
 	}
 	return sqlList
@@ -88,13 +88,12 @@ func Migrate(dbConnectInfo string, sqlFilePath string) {
 	sqlList := fileToList(nmFiles)
 	for j := 0; j < len(sqlList); j++ {
 		tx, err := dbpool.Begin(ctx)
-		for i := 0; i < len(sqlList[j].sqlList); i++ {
-			_, err = tx.Exec(ctx, sqlList[j].sqlList[i]) // Sql request
-			if err != nil {
-				fmt.Println("ERROR: File {" + files[j] + "} has invalid syntax. Rollback. Files before it have been maked.")
-				err = tx.Rollback(ctx)
-				os.Exit(1)
-			}
+
+		_, err = tx.Exec(ctx, sqlList[j].sqlList) // Sql request
+		if err != nil {
+			fmt.Println("ERROR: File {" + files[j] + "} has invalid syntax. Rollback. Files before it have been maked.")
+			err = tx.Rollback(ctx)
+			os.Exit(1)
 		}
 		_, err = dbpool.Exec(ctx, "insert into migrations(filename) values ('"+sqlList[j].filename+"');")
 		err = tx.Commit(ctx)
@@ -104,5 +103,9 @@ func Migrate(dbConnectInfo string, sqlFilePath string) {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("Sql requests have been sent")
+	if len(sqlList) == 0 {
+		fmt.Println("There is no one outstanding file")
+	} else {
+		fmt.Println("Sql requests have been sent")
+	}
 }

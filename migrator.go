@@ -1,4 +1,4 @@
-package migrator
+package main
 
 import (
 	"bufio"
@@ -21,11 +21,11 @@ func removeIndex(s []string, index int) []string {
 	return append(s[:index], s[index+1:]...)
 }
 
-func nonMakedFiles(files []string, makedList []string) []string {
+func nonMakedFiles(files []string, makedList []string, sqlFilePath string) []string {
 	nmFiles := files
 	for i := len(files) - 1; i >= 0; i-- {
 		for j := 0; j < len(makedList); j++ {
-			if files[i] == makedList[j] {
+			if files[i][len(sqlFilePath):] == makedList[j] {
 				nmFiles = removeIndex(nmFiles, i)
 			}
 		}
@@ -33,7 +33,7 @@ func nonMakedFiles(files []string, makedList []string) []string {
 	return nmFiles
 }
 
-func fileToList(files []string, ) sqlReq {
+func fileToList(files []string, sqlFilePath string) sqlReq {
 	var sqlList sqlReq
 	for i := 0; i < len(files); i++ {
 		file, err := os.Open(files[i]) // Read files
@@ -48,7 +48,7 @@ func fileToList(files []string, ) sqlReq {
 		sqlList = append(sqlList, struct {
 			filename string
 			sqlList  string
-		}{filename: files[i]})
+		}{filename: files[i][len(sqlFilePath):]})
 		scanner := bufio.NewScanner(file)
 		for scanner.Scan() {
 			sqlList[i].sqlList += scanner.Text()
@@ -58,7 +58,6 @@ func fileToList(files []string, ) sqlReq {
 }
 
 func Migrate(dbConnectInfo string, sqlFilePath string) error{
-
 	ctx := context.Background()
 	dbpool, err := pgxpool.Connect(ctx, dbConnectInfo)
 	if err != nil {
@@ -81,11 +80,12 @@ func Migrate(dbConnectInfo string, sqlFilePath string) error{
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println(files)
 
 	sort.Strings(files)
 
-	nmFiles := nonMakedFiles(files, makedList)
-	sqlList := fileToList(nmFiles)
+	nmFiles := nonMakedFiles(files, makedList, sqlFilePath)
+	sqlList := fileToList(nmFiles, sqlFilePath)
 	for j := 0; j < len(sqlList); j++ {
 		tx, err := dbpool.Begin(ctx)
 
@@ -109,4 +109,8 @@ func Migrate(dbConnectInfo string, sqlFilePath string) error{
 		fmt.Println("Sql requests have been sent")
 	}
 	return err
+}
+
+func main() {
+	Migrate("postgres://skofli:@localhost:5432/test2","/home/skofli/go/src/migrator/")
 }

@@ -1,4 +1,4 @@
-package main
+package migrator
 
 import (
 	"bufio"
@@ -109,8 +109,4 @@ func Migrate(dbConnectInfo string, sqlFilePath string) error{
 		fmt.Println("Sql requests have been sent")
 	}
 	return err
-}
-
-func main() {
-	Migrate("postgres://skofli:@localhost:5432/test2","/home/skofli/go/src/migrator/")
 }
